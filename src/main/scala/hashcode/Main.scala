@@ -6,6 +6,7 @@ import scala.util.Success
 
 object Main extends App {
   val problem = Parser.read()
+  Visualizer.display(problem)
   val solution = Solver.solve(problem)
   Validator.score(solution, problem) match {
     case Success(score) =>

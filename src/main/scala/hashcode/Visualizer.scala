@@ -10,8 +10,9 @@ import scala.util.Random._
 import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
 import java.awt.event.KeyEvent._
+import java.awt.Dimension
 
-object Visualizer extends App {
+object Visualizer {
   var delayMs = 1000
   val frame = new JFrame("visu")
   frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
@@ -22,7 +23,11 @@ object Visualizer extends App {
   content.add(drawPanel)
   var timer = new Timer
   var paintTask: Option[TimerTask] = None
-  updateSpeed(0)
+
+  def display(problem: Problem) = {
+    drawPanel.problem = Some(problem)
+    updateSpeed(0)
+  }
 
   def updateSpeed(delta: Int) = {
     paintTask.map(_.cancel())
@@ -61,12 +66,23 @@ object Visualizer extends App {
 
   lazy val drawPanel = new JPanel {
     var points = List.empty[(Int, Int)]
+    var problem: Option[Problem] = None
+
+    def coords(d: Dimension, p: Problem, x: Int, y: Int): (Int, Int) =
+      ((x * d.getWidth / p.nbCols).toInt,
+        (y * d.getHeight / p.nbRows).toInt)
+
+    def paintProblem(g: Graphics, d: Dimension)(p: Problem) {
+      for {
+        Point(row, col, _) <- p.targetCells
+        (x, y) = coords(d, p, col, row)
+      } g.drawString("o", x, y)
+
+    }
 
     override def paintComponent(g: Graphics) {
       super.paintComponent(g)
-      g.drawString("This is my custom Panel!", 10, 20)
-      g.drawRect(10, 10, 300, 300)
-      for ((x, y) <- points) g.drawString("o", x, y)
+      problem.map(paintProblem(g, getSize))
     }
   }
 }
