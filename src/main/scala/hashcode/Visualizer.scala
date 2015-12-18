@@ -1,17 +1,10 @@
 package hashcode
 
-import javax.swing.JFrame
-import java.awt.Frame
-import javax.swing.JPanel
-import java.awt.Graphics
-import java.util.Timer
-import java.util.TimerTask
-import scala.util.Random._
-import java.awt.event.KeyAdapter
-import java.awt.event.KeyEvent
+import java.awt.{Dimension, Frame, Graphics}
+import java.awt.event.{KeyAdapter, KeyEvent}
 import java.awt.event.KeyEvent._
-import java.awt.Dimension
-import sun.security.validator.Validator
+import java.util.{Timer, TimerTask}
+import javax.swing.{JFrame, JPanel}
 
 object Visualizer {
   var delayMs = 1000
