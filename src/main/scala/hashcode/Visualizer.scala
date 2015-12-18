@@ -11,9 +11,11 @@ import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
 import java.awt.event.KeyEvent._
 import java.awt.Dimension
+import sun.security.validator.Validator
 
 object Visualizer {
   var delayMs = 1000
+  var turn = 0
   val frame = new JFrame("visu")
   frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
   frame.setVisible(true)
@@ -24,15 +26,17 @@ object Visualizer {
   var timer = new Timer
   var paintTask: Option[TimerTask] = None
 
-  def display(problem: Problem) = {
+  def display(problem: Problem, solution: Solution) = {
     drawPanel.problem = Some(problem)
+    val overTime = Validator.states(solution, problem).map(_.ballons.values.toList)
+    drawPanel.ballonsOverTime = overTime
     updateSpeed(0)
   }
 
   def updateSpeed(delta: Int) = {
     paintTask.map(_.cancel())
     paintTask = Some(newPaintTask)
-    delayMs += delta
+    delayMs = Math.max(50, delayMs + delta)
     timer.scheduleAtFixedRate(paintTask.get, 0, delayMs)
     println(s"delay : $delayMs")
   }
@@ -59,14 +63,16 @@ object Visualizer {
 
   def newPaintTask = new TimerTask {
     override def run(): Unit = {
-      drawPanel.points = List.fill(200)((nextInt(800), nextInt(600)))
       drawPanel.repaint()
+      turn += 1
+      frame.setTitle(s"turn $turn delay : $delayMs ms")
+      if (turn >= 400) cancel()
     }
   }
 
   lazy val drawPanel = new JPanel {
-    var points = List.empty[(Int, Int)]
     var problem: Option[Problem] = None
+    var ballonsOverTime: List[List[Point]] = Nil
 
     def coords(d: Dimension, p: Problem, x: Int, y: Int): (Int, Int) =
       ((x * d.getWidth / p.nbCols).toInt,
@@ -77,6 +83,11 @@ object Visualizer {
         Point(row, col, _) <- p.targetCells
         (x, y) = coords(d, p, col, row)
       } g.drawString("o", x, y)
+
+      for {
+        Point(row, col, _) <- ballonsOverTime(turn)
+        (x, y) = coords(d, p, col, row)
+      } g.drawString("x", x, y)
 
     }
 
