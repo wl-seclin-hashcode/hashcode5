@@ -4,20 +4,25 @@ import scala.util.{Success, Try}
 
 object Validator {
   case class State(ballons : Map[Int, Point]) extends AnyVal {
-    def applyCommand(command: Command) = {
+    def applyCommand(command: Command) = if (!ballons.contains(command.balloonId)) this
+    else {
       val pos = ballons(command.balloonId)
       State(ballons.updated(command.balloonId, pos.addHeight(command.move)))
     }
     def applyWind(windMap: Map[Point, Vector]) = {
-      State(ballons.mapValues(p => p.addVector(windMap(p))))
+      State(
+        ballons.mapValues(p => p.addVector(windMap(p)))
+          .filter { case (i,p) => !p.isLost }
+      )
     }
+    def validate():Unit = ballons.values.foreach(_.validate())
   }
 
   def score(solution: Solution, problem: Problem): Try[Int] = {
 
     val allStates = states(solution,problem)
-    println(allStates)
-    Success(42)
+    val scoreByTurn = allStates.map(state => problem.targetCells.count(_.inAnyZone(state.ballons.values)))
+    Success(scoreByTurn.sum)
   }
 
   def states(solution: Solution, problem: Problem) = {
