@@ -11,6 +11,7 @@ import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
 import java.awt.event.KeyEvent._
 import java.awt.Dimension
+import sun.security.validator.Validator
 
 object Visualizer {
   var delayMs = 1000
@@ -25,9 +26,10 @@ object Visualizer {
   var timer = new Timer
   var paintTask: Option[TimerTask] = None
 
-  def display(problem: Problem, ballonsOverTime: List[List[Point]]) = {
+  def display(problem: Problem, solution: Solution) = {
     drawPanel.problem = Some(problem)
-    drawPanel.ballonsOverTime = ballonsOverTime
+    val overTime = Validator.states(solution, problem).map(_.ballons.values.toList)
+    drawPanel.ballonsOverTime = overTime
     updateSpeed(0)
   }
 

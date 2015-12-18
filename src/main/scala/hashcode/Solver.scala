@@ -7,7 +7,10 @@ object Solver {
       round <- 0 until nbTurns
       balloon <- 0 until nbBallons
     } yield {
-      val move = if (round % 8 == 0 && balloon == round / 8) 1 else 0
+      val move =
+        if (round % 8 == 0 && balloon == round / 8) 1
+        else if (round % 50 == 0 && balloon == round / 50) 1
+        else 0
       Command(balloon, move, round)
     }
     Solution(commands.toList)
