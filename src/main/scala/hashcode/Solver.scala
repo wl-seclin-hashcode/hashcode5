@@ -2,5 +2,5 @@ package hashcode
 
 object Solver {
   def solve(problem: Problem): Solution =
-    Solution(42)
+    Solution(List(Command(1,1,1)))
 }

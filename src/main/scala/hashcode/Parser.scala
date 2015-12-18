@@ -16,12 +16,12 @@ object Parser {
 
     Problem(nbRows, nbCols, nbHeights, nbCells, radius, nbBallons, nbTurns, Point(startRow, startCol,0),
       targetCells.map { case Array(x,y) => Point(x,y,0) },
-      sections.zipWithIndex.map { case (list, height) => list.zipWithIndex.map {
+      sections.zipWithIndex.flatMap { case (list, height) => list.zipWithIndex.map {
         case (line, row) => line.zipWithIndex.map {
           case (vector, col) => Point(row, col, height + 1) -> vector
         }
       }
-      }.flatten.flatten.toMap
+      }.flatten.toMap
     )
 
   }

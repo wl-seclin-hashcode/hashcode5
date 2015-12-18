@@ -1,3 +1,4 @@
 package hashcode
 
-case class Solution(dummy:Int)
+case class Command(balloonId: Int, move: Int, round:Int)
+case class Solution(sol: List[Command])
