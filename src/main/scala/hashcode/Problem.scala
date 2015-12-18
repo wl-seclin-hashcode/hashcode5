@@ -1,7 +1,8 @@
 package hashcode
 
 case class Point(row:Int, col:Int, height: Int) {
-
+  def addHeight(h: Int) = this.copy(height = height+h)   // TODO OVERFLOW !
+  def addVector(v:Vector) = this.copy(row= row + v.dr, col = (col + v.dc) % 300)
 }
 
 case class Vector(dr:Int, dc: Int)
