@@ -14,7 +14,7 @@ case class Point(row:Int, col:Int, height: Int) {
   def addVector(v:Vector) = this.copy(row= row + v.dr, col = (col + v.dc) % nbCols)
   def isLost = row < 0 || row >= nbRows
   //Method for cities
-  def inZone(ballon: Point) = {
+  def inZone(ballon: Point) = ballon.height > 0 && {
     val cdist = (ballon.col - col).abs min (nbCols - (ballon.col - col).abs)
     val rdist = ballon.row - row
     cdist*cdist + rdist*rdist <= radius*radius
