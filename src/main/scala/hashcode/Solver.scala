@@ -20,7 +20,6 @@ object Solver {
   def solve(problem: Problem): Solution = {
     implicit class SolutionOps(s: Solution) {
       lazy val score = {
-        println(s"score with ${s.sol.size} commands")
         Validator.score(s, problem).get
       }
 
@@ -28,11 +27,11 @@ object Solver {
     }
 
     import problem._
-    val initialSolution = Solution(Nil)
+    val initialSolution = Solution(Vector.empty)
     (0 until nbBallons).foldLeft(initialSolution) {
       case (sol, bal) =>
-        val best = List.fill(10)(brownianBalloon(bal)).map(cmds =>
-          Solution(cmds.toList) + sol)
+        val best = List.fill(100)(brownianBalloon(bal)).map(cmds =>
+          Solution(cmds.toVector) + sol)
           .maxBy(_.score)
         println(s"score after balloon $bal : ${best.score}")
         best

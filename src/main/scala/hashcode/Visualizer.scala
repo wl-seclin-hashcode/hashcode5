@@ -21,7 +21,7 @@ object Visualizer {
 
   def display(problem: Problem, solution: Solution) = {
     drawPanel.problem = Some(problem)
-    val overTime = Validator.states(solution, problem).map(_.ballons.values.toList)
+    val overTime = Validator.states(solution, problem).map(_.ballons.values.toVector)
     drawPanel.ballonsOverTime = overTime
     updateSpeed(0)
   }
@@ -65,7 +65,7 @@ object Visualizer {
 
   lazy val drawPanel = new JPanel {
     var problem: Option[Problem] = None
-    var ballonsOverTime: List[List[Point]] = Nil
+    var ballonsOverTime: Vector[Vector[Point]] = Vector.empty
 
     def coords(d: Dimension, p: Problem, x: Int, y: Int): (Int, Int) =
       ((x * d.getWidth / p.nbCols).toInt,

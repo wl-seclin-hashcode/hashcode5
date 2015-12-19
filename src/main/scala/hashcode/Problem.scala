@@ -12,8 +12,7 @@ case class Point(row: Int, col: Int, height: Int) {
   }
 
   def addHeight(h: Int) = this.copy(height = height + h)
-
-  def addVector(v: Vector) = this.copy(row = row + v.dr, col = (col + v.dc) % nbCols)
+  def addVector(v: WindVector) = this.copy(row = row + v.dr, col = (col + v.dc + nbCols) % nbCols)
 
   def isLost = row < 0 || row >= nbRows
 
@@ -30,22 +29,20 @@ case class Point(row: Int, col: Int, height: Int) {
   def to2d = Point2D(row, col)
 }
 
+case class WindVector(dr: Int, dc: Int)
 case class Point2D(row: Int, col: Int)
-
-case class Vector(dr: Int, dc: Int)
 
 case class Problem(nbRows: Int, nbCols: Int, nbHeights: Int,
                    nbCells: Int, radius: Int, nbBallons: Int, nbTurns: Int,
-                   startPoint: Point, targetCells: List[Point], winds: Map[Point, Vector]) {
+                   startPoint: Point, targetCells: Vector[Point], winds: Map[Point, WindVector]) {
 
-  val connectedCitiesMap: Map[Point2D, List[Int]] = (for {
+  val connectedCitiesMap: Map[Point2D, Vector[Int]] = (for {
     row <- 0 until nbRows
     col <- 0 until nbCols
     p = Point(row, col, 1)
-  } yield p.to2d -> targetCells.zipWithIndex.collect({ case (c, i) if c.inZone(p,this) => i })).toMap
+  } yield p.to2d -> targetCells.zipWithIndex.collect({ case (c, i) if c.inZone(p, this) => i })).toMap
 
-  def connectedCount(balloons: Iterable[Point]) = balloons.toSet.flatMap({ b:Point => if (b.height >0) connectedCitiesMap(b.to2d) else Set.empty }).size
-
+  def connectedCount(balloons: Iterable[Point]) =
+    balloons.toSet.flatMap({ b: Point => if (b.height > 0) connectedCitiesMap(b.to2d) else Set.empty }).size
 
 }
-
