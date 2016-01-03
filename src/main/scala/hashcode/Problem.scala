@@ -17,7 +17,7 @@ case class Point(row: Int, col: Int, height: Int) {
   def reachable = for {
     i <- -1 to 1
     p = addHeight(i)
-    if height < nbHeights && height >= 1
+    if p.height <= nbHeights && p.height >= 1
   } yield p
 
   def isLost = row < 0 || row >= nbRows
