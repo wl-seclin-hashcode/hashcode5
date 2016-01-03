@@ -14,6 +14,12 @@ case class Point(row: Int, col: Int, height: Int) {
   def addHeight(h: Int) = this.copy(height = height + h)
   def addVector(v: WindVector) = this.copy(row = row + v.dr, col = (col + v.dc + nbCols) % nbCols)
 
+  def reachable = for {
+    i <- -1 to 1
+    p = addHeight(i)
+    if height < nbHeights && height >= 1
+  } yield p
+
   def isLost = row < 0 || row >= nbRows
 
   //Method for cities

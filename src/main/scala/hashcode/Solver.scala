@@ -18,6 +18,18 @@ object Solver {
   }
 
   def solve(problem: Problem): Solution = {
+    val noWind = for {
+      (p, wv) <- problem.winds
+      p2 <- p.reachable
+      t = p2.addVector(wv)
+      t2 <- t.reachable
+      wvt <- problem.winds.get(t2)
+      pb = t2.addVector(wvt)
+      if pb == p
+    } yield (p, t)
+
+    noWind.foreach(println)
+
     implicit class SolutionOps(s: Solution) {
       lazy val score = {
         Validator.score(s, problem).get
