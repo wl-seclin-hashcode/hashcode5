@@ -30,7 +30,7 @@ object Solver {
     val initialSolution = Solution(Vector.empty)
     (0 until nbBallons).foldLeft(initialSolution) {
       case (sol, bal) =>
-        val best = List.fill(100)(brownianBalloon(bal)).map(cmds =>
+        val best = List.fill(1)(brownianBalloon(bal)).map(cmds =>
           Solution(cmds.toVector) + sol)
           .maxBy(_.score)
         println(s"score after balloon $bal : ${best.score}")

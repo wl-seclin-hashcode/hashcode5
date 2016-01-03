@@ -1,12 +1,12 @@
 package hashcode
 
-import java.awt.{Dimension, Frame, Graphics}
-import java.awt.event.{KeyAdapter, KeyEvent}
+import java.awt.{ Dimension, Frame, Graphics }
+import java.awt.event.{ KeyAdapter, KeyEvent }
 import java.awt.event.KeyEvent._
-import java.util.{Timer, TimerTask}
-import javax.swing.{JFrame, JPanel}
+import java.util.{ Timer, TimerTask }
+import javax.swing.{ JFrame, JPanel }
 
-object Visualizer {
+case class Visualizer[T](painter: (Graphics, Dimension, Problem, T) => Unit, steps: Seq[T], problem: Problem) {
   var delayMs = 1000
   var turn = 0
   val frame = new JFrame("visu")
@@ -19,10 +19,7 @@ object Visualizer {
   var timer = new Timer
   var paintTask: Option[TimerTask] = None
 
-  def display(problem: Problem, solution: Solution) = {
-    drawPanel.problem = Some(problem)
-    val overTime = Validator.states(solution, problem).map(_.ballons.values.toVector)
-    drawPanel.ballonsOverTime = overTime
+  def display() = {
     updateSpeed(0)
   }
 
@@ -30,7 +27,7 @@ object Visualizer {
     paintTask.map(_.cancel())
     paintTask = Some(newPaintTask)
     delayMs = Math.max(50, delayMs + delta)
-    timer.scheduleAtFixedRate(paintTask.get, 0, delayMs)
+    timer.scheduleAtFixedRate(paintTask.get, delayMs, delayMs)
     println(s"delay : $delayMs")
   }
 
@@ -64,29 +61,9 @@ object Visualizer {
   }
 
   lazy val drawPanel = new JPanel {
-    var problem: Option[Problem] = None
-    var ballonsOverTime: Vector[Vector[Point]] = Vector.empty
-
-    def coords(d: Dimension, p: Problem, x: Int, y: Int): (Int, Int) =
-      ((x * d.getWidth / p.nbCols).toInt,
-        (y * d.getHeight / p.nbRows).toInt)
-
-    def paintProblem(g: Graphics, d: Dimension)(p: Problem) {
-      for {
-        Point(row, col, _) <- p.targetCells
-        (x, y) = coords(d, p, col, row)
-      } g.drawString("o", x, y)
-
-      for {
-        Point(row, col, _) <- ballonsOverTime(turn)
-        (x, y) = coords(d, p, col, row)
-      } g.drawString("x", x, y)
-
-    }
-
     override def paintComponent(g: Graphics) {
       super.paintComponent(g)
-      problem.map(paintProblem(g, getSize))
+      painter(g, getSize, problem, steps(turn))
     }
   }
 }
