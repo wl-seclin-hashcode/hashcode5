@@ -12,7 +12,7 @@ object Main extends App {
   val problem = Parser.read()
   val solution = Solver.solve(problem)
   val steps=Validator.states(solution, problem).map(_.ballons.values.toVector)
-  Future(Visualizer(paint, steps, problem).display())
+  Visualizer(paint, steps, problem, problem.nbTurns)
   Validator.score(solution, problem) match {
     case Success(score) =>
       println(s"score : $score")
