@@ -18,7 +18,6 @@ object Validator {
   }
 
   def score(solution: Solution, problem: Problem): Try[Int] = {
-
     val allStates = states(solution, problem)
     val scoreByTurn = allStates.map(state => problem.connectedCount(state.ballons.values))
     Success(scoreByTurn.sum)

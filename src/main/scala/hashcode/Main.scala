@@ -11,7 +11,7 @@ import java.awt.Dimension
 object Main extends App {
   val problem = Parser.read()
   val solution = Solver.solve(problem)
-  val steps=Validator.states(solution, problem).map(_.ballons.values.toVector)
+  val steps = Validator.states(solution, problem).map(_.ballons.toVector)
   Visualizer(paint, steps, problem, problem.nbTurns)
   Validator.score(solution, problem) match {
     case Success(score) =>
@@ -21,16 +21,17 @@ object Main extends App {
       e.printStackTrace()
   }
 
-  def paint(g: Graphics, d: Dimension, p: Problem, step: Vector[Point]): Unit = {
+  def paint(g: Graphics, d: Dimension, p: Problem, step: Vector[(Int, Point)]): Unit = {
     for {
       Point(row, col, _) <- p.targetCells
       (x, y) = coords(d, p, col, row)
-    } g.drawString("o", x, y)
+    } g.drawString(".", x, y)
 
     for {
-      Point(row, col, _) <- step
+      (b, Point(row, col, h)) <- step
+      if h > 0
       (x, y) = coords(d, p, col, row)
-    } g.drawString("x", x, y)
+    } g.drawString((b % 10).toString, x, y)
 
     def coords(d: Dimension, p: Problem, x: Int, y: Int): (Int, Int) =
       ((x * d.getWidth / p.nbCols).toInt,
