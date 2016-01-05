@@ -7,6 +7,9 @@ import scala.util.{Failure, Success}
 object Main extends App {
   val problem = Parser.read()
   //showCalmSpots()
+  val bfs = problem.bfs(problem.startPoint)
+  println(bfs.size)
+  println(bfs.values.maxBy(_.score))
   val solution = Solver.solve(problem)
   val steps = Validator.states(solution, problem).map(_.ballons.toVector)
   Visualizer(paint, steps, problem, problem.nbTurns)

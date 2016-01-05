@@ -1,5 +1,8 @@
 package hashcode
 
+import scala.annotation.tailrec
+import scala.collection.mutable
+
 case class Point(row: Int, col: Int, height: Int) {
 
   import Main.problem._
@@ -50,5 +53,55 @@ case class Problem(nbRows: Int, nbCols: Int, nbHeights: Int,
 
   def connectedCount(balloons: Iterable[Point]) =
     balloons.toSet.flatMap({ b: Point => if (b.height > 0) connectedCitiesMap(b.to2d) else Set.empty }).size
+
+  def successors(p:Point) = (p.height match {
+    case 0 ⇒ p.addHeight(1) :: Nil
+    case 1 ⇒ p :: p.addHeight(1) :: Nil
+    case `nbHeights` ⇒ p :: p.addHeight(-1) :: Nil
+    case _ ⇒ List(p, p.addHeight(1), p.addHeight(-1))
+  }) map (p ⇒ p.addVector(winds(p))) filterNot (_.isLost)
+
+
+  case class BFSStat(parent:Point, depth: Int, score: Int) {
+    def addEdge(from :Point, to: Point) = BFSStat(from, depth+1, score + scoreAt(to))
+  }
+
+  object BFSStat { def initial(p:Point) = BFSStat(p,0,0) }
+
+  def bfs(p:Point): Map[Point, BFSStat] = bfs(Vector(p), Map(p → BFSStat.initial(p)))
+
+  @tailrec
+  final def bfs(toVisit: Vector[Point], visited:Map[Point, BFSStat]=Map.empty): Map[Point, BFSStat] = {
+    if (toVisit.isEmpty) visited
+    else {
+      val p = toVisit.head
+      val stat = visited(p)
+      val children = successors(p).filterNot(visited.contains)
+      bfs(
+        toVisit.tail ++ children,
+        visited ++ children.map { child ⇒ child → stat.addEdge(p,child) }
+      )
+    }
+  }
+
+  def scoreAt(p: Point) = connectedCitiesMap(p.to2d).length
+
+  def dfs(p:Point, level:Int = 0,
+          visitingPath:List[Point] = List.empty, visitingSet: /*mutable.*/Set[Point]=/*mutable.*/Set.empty,
+          visited: mutable.Set[Point] = mutable.Set.empty): List[List[Point]] =
+    if (visitingSet(p))
+      List(p :: visitingPath) //println("New cycle found: " + (p :: visitingPath) )
+    else if (visited(p) || level==nbTurns)
+      List.empty
+    else {
+      val succs = successors(p)
+      val visitingSet1 = visitingSet + p
+      //visitingSet += p
+      val visitingPath1 = p :: visitingPath
+      val r = succs flatMap { s ⇒ dfs(s, level+1, visitingPath1, visitingSet1, visited) }
+     // visitingSet -= p
+      visited += p
+      r
+    }
 
 }
