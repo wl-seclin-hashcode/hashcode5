@@ -1,16 +1,12 @@
 package hashcode
 
-import java.io.PrintStream
-import scala.util.Failure
-import scala.util.Success
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
-import java.awt.Graphics
-import java.awt.Dimension
+import java.awt.{Dimension, Graphics}
+
+import scala.util.{Failure, Success}
 
 object Main extends App {
   val problem = Parser.read()
-  showCalmSpots()
+  //showCalmSpots()
   val solution = Solver.solve(problem)
   val steps = Validator.states(solution, problem).map(_.ballons.toVector)
   Visualizer(paint, steps, problem, problem.nbTurns)

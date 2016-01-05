@@ -25,7 +25,7 @@ object Validator {
 
   def states(solution: Solution, problem: Problem) = {
     val initState = Vector.tabulate(problem.nbBallons)({ i => i -> problem.startPoint }).toMap
-    val windMap = problem.winds.withDefaultValue(WindVector(0, 0))
+    val windMap = problem.winds + (problem.startPoint → WindVector(0, 0))
     solution.byRound.toVector.sortBy(_._1).scanLeft(State(initState)) {
       case (state, (_, commands)) =>
         val s = commands.foldLeft(state) { (s, c) => s.applyCommand(c) }

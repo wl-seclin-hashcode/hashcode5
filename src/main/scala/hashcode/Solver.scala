@@ -36,8 +36,8 @@ object Solver {
       round <- from until 400
     } yield {
       val move =
-        if (height <= 1) Random.nextInt(2)
-        else if (height == 8) -Random.nextInt(2)
+        if (h <= 1) Random.nextInt(2)
+        else if (h == 8) -Random.nextInt(2)
         else Random.nextInt(3) - 1
       h += move
       Command(balloon, move, round)
@@ -63,7 +63,7 @@ object Solver {
                 Solution(sol.sol.take(turn + nbTurns * bal) ++ cmds.toVector))
               val best = candidates.maxBy(_.score)
               println(s"score after balloon $bal @turn $turn: ${best.score} ($tries tries)")
-              (best, height + best.sol(turn).move)
+              (best, height + best.sol(turn + nbTurns * bal).move)
             } else (sol, height)
         }
         s
