@@ -38,7 +38,9 @@ case class Point(row: Int, col: Int, height: Int) {
   def to2d = Point2D(row, col)
 }
 
-case class WindVector(dr: Int, dc: Int)
+case class WindVector(dr: Int, dc: Int) {
+  val speed = math.sqrt(dr * dr + dc * dc)
+}
 case class Point2D(row: Int, col: Int)
 
 case class Problem(nbRows: Int, nbCols: Int, nbHeights: Int,
