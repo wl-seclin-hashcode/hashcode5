@@ -128,6 +128,7 @@ case class Solver(problem: Problem) {
               best
             } else sol
         }
+        Formatter.write(s, s.score)
         s
     }
   }

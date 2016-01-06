@@ -12,4 +12,15 @@ object Formatter {
     f.close
     println(s"wrote to $name")
   }
+
+  def read(score: Int): Solution = {
+    val name = s"out.${score}.txt"
+    val lines = io.Source.fromFile(name).getLines
+    val cmds = for {
+      (l, turn) <- lines.zipWithIndex
+      (move, balloon) <- l.split(" ").zipWithIndex
+    } yield Command(balloon, move.toInt, turn)
+    Solution(cmds.toVector)
+  }
+
 }
