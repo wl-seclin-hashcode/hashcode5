@@ -9,10 +9,12 @@ object Main extends App {
   val problem = Parser.read()
 //  showWindMap()
   val bfs = problem.bfs(problem.startPoint)
+  val initialSol=Formatter.read(201688)
   println(bfs.size)
   println(bfs.values.maxBy(_.score))
   //  showCalmSpots()
-  val solution = Solver(problem).solve
+  val solver=Solver(problem,Some(initialSol))
+  val solution = solver.solve
   val steps = Validator.states(solution, problem).map(_.ballons.toVector)
   Visualizer(paint, steps, problem, problem.nbTurns)
   Validator.score(solution, problem) match {
@@ -24,7 +26,7 @@ object Main extends App {
   }
 
   def showCalmSpots() {
-    val cycles = Solver(problem).cycles
+    val cycles = solver.cycles
 
     def paintSpots(g: Graphics, d: Dimension, p: Problem, step: Int): Unit = {
       drawTargetCells(g, d, p)

@@ -1,8 +1,40 @@
 package hashcode
 
 import scala.util.Random
+import scala.collection.parallel.immutable.ParVector
 
-case class Solver(problem: Problem) {
+case class Solver(problem: Problem, initialSolution: Option[Solution]) {
+  import problem._
+
+  def solve: Solution = {
+    (ParVector.fill(1000)(randomSolution) ++ initialSolution).maxBy(_.score)
+  }
+
+  def solveOld: Solution = {
+    val initialSolution = Solution(Vector.empty)
+    (0 until nbBallons).foldLeft(initialSolution) {
+      case (sol0, bal) =>
+        val s = (0 until nbTurns).foldLeft(sol0) {
+          case (sol, turn) =>
+            val tries = (50 - 10 * math.sqrt(turn)).toInt max 0
+            val startPos = sol.balloonAt(bal, turn)
+            if (tries > 0 && startPos.isDefined) {
+              val candidates = sol :: List.fill(tries)(brownianHeuristicBalloon(bal, turn, startPos.get)).map(cmds =>
+                Solution(sol.sol.take(turn + nbTurns * bal) ++ cmds.toVector))
+              val best = candidates.maxBy(_.score)
+              println(s"score after balloon $bal @turn $turn: ${best.score} ($tries tries)")
+              best
+            } else sol
+        }
+        Formatter.write(s, s.score)
+        s
+    }
+  }
+
+  def randomSolution = Solution(Vector.tabulate(nbBallons)(brownianBalloon(_)).flatten)
+  def emptySolution = Solution(Vector.tabulate(nbBallons)(emptyBalloon).flatten)
+
+  def emptyBalloon(b: Int) = Vector.tabulate(nbTurns)(Command(b, 0, _))
 
   def cycles: Iterable[List[Point]] = {
 
@@ -75,7 +107,7 @@ case class Solver(problem: Problem) {
     cmds
   }
 
-  def brownianBalloon(balloon: Int, from: Int, height: Int) = {
+  def brownianBalloon(balloon: Int, from: Int = 0, height: Int = 0) = {
     var h = height
     for {
       round <- from to problem.nbTurns
@@ -108,28 +140,6 @@ case class Solver(problem: Problem) {
           Command(balloon, dh, round)
         case None => Command(balloon, 0, round)
       }
-    }
-  }
-
-  def solve: Solution = {
-    import problem._
-    val initialSolution = Solution(Vector.empty)
-    (0 until nbBallons).foldLeft(initialSolution) {
-      case (sol0, bal) =>
-        val s = (0 until nbTurns).foldLeft(sol0) {
-          case (sol, turn) =>
-            val tries = (50 - 10 * math.sqrt(turn)).toInt max 0
-            val startPos = sol.balloonAt(bal, turn)
-            if (tries > 0 && startPos.isDefined) {
-              val candidates = sol :: List.fill(tries)(brownianHeuristicBalloon(bal, turn, startPos.get)).map(cmds =>
-                Solution(sol.sol.take(turn + nbTurns * bal) ++ cmds.toVector))
-              val best = candidates.maxBy(_.score)
-              println(s"score after balloon $bal @turn $turn: ${best.score} ($tries tries)")
-              best
-            } else sol
-        }
-        Formatter.write(s, s.score)
-        s
     }
   }
 
