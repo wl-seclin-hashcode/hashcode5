@@ -1,19 +1,19 @@
 package hashcode
 
-import java.awt.{Dimension, Graphics}
+import java.awt.{ Dimension, Graphics }
 
-import scala.util.{Failure, Success}
+import scala.util.{ Failure, Success }
 import scala.util.Random
 
 object Main extends App {
   val problem = Parser.read()
-//  showWindMap()
+  //  showWindMap()
   val bfs = problem.bfs(problem.startPoint)
-  val initialSol=Formatter.read(201688)
+  val initialSol = Formatter.read(260962)
   println(bfs.size)
   println(bfs.values.maxBy(_.score))
   //  showCalmSpots()
-  val solver=Solver(problem,Some(initialSol))
+  val solver = Solver(problem, None) //Some(initialSol))
   val solution = solver.solve
   val steps = Validator.states(solution, problem).map(_.ballons.toVector)
   Visualizer(paint, steps, problem, problem.nbTurns)

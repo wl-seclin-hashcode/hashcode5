@@ -2,12 +2,23 @@ package hashcode
 
 import scala.util.Random
 import scala.collection.parallel.immutable.ParVector
+import scala.concurrent.Future
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
+import scala.concurrent.ExecutionContext.Implicits.global
 
 case class Solver(problem: Problem, initialSolution: Option[Solution]) {
   import problem._
 
   def solve: Solution = {
-    (ParVector.fill(1000)(randomSolution) ++ initialSolution).maxBy(_.score)
+    def generate(count: Int) = (Vector.fill(count)(randomSolution)).maxBy(_.score)
+    def combine(generation: Int): Future[Solution] =
+      if (generation == 0) Future(generate(20))
+      else for {
+        s1 <- combine(generation - 1)
+        s2 <- combine(generation - 1)
+      } yield s1 combineWith s2
+    Await.result(combine(3), Duration.Inf)
   }
 
   def solveOld: Solution = {
@@ -147,6 +158,30 @@ case class Solver(problem: Problem, initialSolution: Option[Solution]) {
     lazy val score = {
       Validator.score(s, problem).get
     }
+
+    def replace(bal: Int, commands: Int => Vector[Command]) =
+      Solution(s.sol.filterNot(_.balloonId == bal) ++ commands(bal))
+
+    lazy val scoresWithoutBalloon: Map[Int, Int] =
+      Map((for (bal <- 0 to nbBallons) yield bal -> replace(bal, emptyBalloon).score): _*)
+
+    lazy val balloonsByScore = scoresWithoutBalloon.toList.sortBy(_._2).map(_._1)
+
+    def combineWith(s2: Solution, ratio: Double = 0.5) = {
+      val count1 = (nbBallons * ratio).toInt
+      val count2 = nbBallons - count1
+      val res = Solution(bestCommandsByBallons(count1) ++ s2.bestCommandsByBallons(count2, count1))
+      println(s"$score + ${s2.score} => combined: ${res.score}")
+      res
+    }
+
+    def bestCommandsByBallons(nbBal: Int, shiftId: Int = 0): Vector[Command] =
+      for {
+        (balloon, bId) <- balloonsByScore.take(nbBal).zipWithIndex.toVector
+        (b, cmds) <- s.byBalloon
+        if b == balloon
+        c <- cmds
+      } yield c.copy(balloonId = bId + shiftId)
 
     def balloonAt(bal: Int, turn: Int): Option[Point] = {
       val windMap = problem.winds + (problem.startPoint → WindVector(0, 0))
