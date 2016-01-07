@@ -12,12 +12,21 @@ case class Solver(problem: Problem, initialSolution: Option[Solution]) {
 
   def solve: Solution = {
     def generate(count: Int) = (Vector.fill(count)(randomSolution)).maxBy(_.score)
-    def combine(generation: Int): Future[Solution] =
-      if (generation == 0) Future(generate(20))
+    def combine(generation: Int): Future[Solution] = {
+      println(s"starting generations $generation")
+      if (generation == 0){
+      println(s"starting actual generation")
+        Future(generate(20))
+      }
       else for {
         s1 <- combine(generation - 1)
         s2 <- combine(generation - 1)
-      } yield s1 combineWith s2
+      } yield {
+        val best = Seq(s1, s2).maxBy(_.score)
+        Formatter.write(best, best.score)
+        s1 combineWith s2
+      }
+    }
     Await.result(combine(3), Duration.Inf)
   }
 
