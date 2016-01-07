@@ -17,17 +17,17 @@ case class Solver(problem: Problem, initialSolution: Option[Solution]) extends L
       debug(s"starting generations $generation")
       if (generation == 0) {
         debug(s"starting actual generation")
-        Future(generate(100))
+        Future(generate(20))
       } else for {
-        List(s1, s2) <- Future.sequence(List(combine(generation - 1), combine(0)))
+        List(s1, s2) <- Future.sequence(List(combine(generation - 1), combine(generation - 1)))
       } yield {
         val best = Seq(s1, s2).maxBy(_.score)
         info(s"gen $generation found score ${best.score}")
         Formatter.write(best, best.score)
-        s1.combineWith(s2, 1 - 1 / (1 + generation.toDouble))
+        s1.combineWith(s2) //, 1 - 1 / (1 + generation.toDouble))
       }
     }
-    Await.result(combine(20), Duration.Inf)
+    Await.result(combine(10), Duration.Inf)
   }
 
   def solveOld: Solution = {
@@ -180,7 +180,7 @@ case class Solver(problem: Problem, initialSolution: Option[Solution]) extends L
       val count1 = (nbBallons * ratio).toInt
       val count2 = nbBallons - count1
       val res = Solution(bestCommandsByBallons(count1) ++ s2.bestCommandsByBallons(count2, count1))
-      println(s"$score (keep $count1) + ${s2.score} (keep $count2) => combined: ${res.score}")
+      debug(s"$score (keep $count1) + ${s2.score} (keep $count2) => combined: ${res.score}")
       res
     }
 
