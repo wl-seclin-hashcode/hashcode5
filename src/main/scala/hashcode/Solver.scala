@@ -6,28 +6,27 @@ import scala.concurrent.Future
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
+import grizzled.slf4j.Logging
 
-case class Solver(problem: Problem, initialSolution: Option[Solution]) {
+case class Solver(problem: Problem, initialSolution: Option[Solution]) extends Logging {
   import problem._
 
   def solve: Solution = {
     def generate(count: Int) = (Vector.fill(count)(randomSolution)).maxBy(_.score)
     def combine(generation: Int): Future[Solution] = {
-      println(s"starting generations $generation")
-      if (generation == 0){
-      println(s"starting actual generation")
+      info(s"starting generations $generation")
+      if (generation == 0) {
+        info(s"starting actual generation")
         Future(generate(20))
-      }
-      else for {
-        s1 <- combine(generation - 1)
-        s2 <- combine(generation - 1)
+      } else for {
+        List(s1, s2) <- Future.sequence(List.fill(2)(combine(generation - 1)))
       } yield {
         val best = Seq(s1, s2).maxBy(_.score)
         Formatter.write(best, best.score)
         s1 combineWith s2
       }
     }
-    Await.result(combine(3), Duration.Inf)
+    Await.result(combine(8), Duration.Inf)
   }
 
   def solveOld: Solution = {
