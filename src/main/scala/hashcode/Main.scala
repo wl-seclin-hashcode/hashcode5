@@ -9,7 +9,7 @@ object Main extends App {
   val problem = Parser.read()
   //  showWindMap()
   val bfs = problem.bfs(problem.startPoint)
-  val initialSol = Formatter.read(260962)
+//  val initialSol = Formatter.read(260962)
   println(bfs.size)
   println(bfs.values.maxBy(_.score))
   //  showCalmSpots()

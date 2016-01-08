@@ -12,12 +12,12 @@ case class Solver(problem: Problem, initialSolution: Option[Solution]) extends L
   import problem._
 
   def solve: Solution = {
-    def generate(count: Int) = (Vector.fill(count)(randomSolution)).maxBy(_.score)
+    def generate(count: Int) = (Vector.fill(count)(hybridSolution)).maxBy(_.score)
     def combine(generation: Int): Future[Solution] = {
       debug(s"starting generations $generation")
       if (generation == 0) {
         debug(s"starting actual generation")
-        Future(generate(20))
+        Future(generate(40))
       } else for {
         List(s1, s2) <- Future.sequence(List(combine(generation - 1), combine(generation - 1)))
       } yield {
@@ -27,7 +27,8 @@ case class Solver(problem: Problem, initialSolution: Option[Solution]) extends L
         s1.combineWith(s2) //, 1 - 1 / (1 + generation.toDouble))
       }
     }
-    Await.result(combine(10), Duration.Inf)
+
+    Await.result(combine(5), Duration.Inf)
   }
 
   def solveOld: Solution = {
@@ -52,6 +53,7 @@ case class Solver(problem: Problem, initialSolution: Option[Solution]) extends L
   }
 
   def randomSolution = Solution(Vector.tabulate(nbBallons)(brownianBalloon(_)).flatten)
+  def hybridSolution = Solution(Vector.tabulate(nbBallons)(brownianThenQuickBalloon(_, Random.nextInt(problem.nbTurns - 10))).flatten)
   def emptySolution = Solution(Vector.tabulate(nbBallons)(emptyBalloon).flatten)
 
   def emptyBalloon(b: Int) = Vector.tabulate(nbTurns)(Command(b, 0, _))
@@ -99,6 +101,18 @@ case class Solver(problem: Problem, initialSolution: Option[Solution]) extends L
     covers = problem.connectedCitiesMap.get(Point2D(p2.row, p2.col)).map(_.size).sum > 0
   } yield Infos(dh, p2, covers, wv.speed)
 
+  def move(dh: Int, optP: Option[Point]) =
+    for {
+      p <- optP
+      pm = p.addHeight(dh)
+      wv <- problem.winds.get(pm)
+      p2 = pm.addVector(wv)
+      if problem.winds.isDefinedAt(p2)
+    } yield p2
+
+  def applyMoves(cmds: Iterable[Command], p: Point = problem.startPoint) =
+    cmds.foldLeft(Some(p): Option[Point]) { case (optPt, cmd) => move(cmd.move, optPt) }
+
   def smartBalloon(balloon: Int, sol: Solution): Vector[Command] = {
     val (cmds, _) = (1 to problem.nbTurns).foldLeft((Vector[Command](), problem.startPoint)) {
       case ((commands, p), turn) =>
@@ -125,6 +139,27 @@ case class Solver(problem: Problem, initialSolution: Option[Solution]) extends L
         }
     }
     cmds
+  }
+
+  def quickBalloon(balloon: Int, start: Point = problem.startPoint, from: Int = 1): Vector[Command] = {
+    val (cmds, endPoint) = (from to problem.nbTurns).foldLeft((Vector[Command](), start)) {
+      case ((commands, previous), turn) =>
+        movesFrom(previous).sortWith(lt).lastOption match {
+          case Some(Infos(dh, point, _, _)) => (commands :+ Command(balloon, dh, turn), point)
+          case _                            => (commands :+ Command(balloon, 0, turn), previous)
+        }
+    }
+    cmds
+  }
+
+  def brownianThenQuickBalloon(bal: Int, brownianTurns: Int) = {
+    val initialCmds = brownianBalloon(bal).take(brownianTurns)
+    val quickTurns = problem.nbTurns - brownianTurns
+    val endCmds = applyMoves(initialCmds) match {
+      case Some(point) => quickBalloon(bal, point, brownianTurns + 1)
+      case None        => emptyBalloon(bal).take(quickTurns)
+    }
+    initialCmds ++ endCmds
   }
 
   def brownianBalloon(balloon: Int, from: Int = 0, height: Int = 0) = {
