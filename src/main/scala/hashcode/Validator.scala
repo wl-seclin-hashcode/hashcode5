@@ -23,6 +23,13 @@ object Validator {
     Success(scoreByTurn.sum)
   }
 
+  def score(ballons: List[Point], p:Point, problem: Problem) = {
+    val cities = problem.connectedCitiesMap(p).toSet
+    val result = ballons.foldLeft(cities) { (cities, ballon) ⇒
+      cities -- problem.connectedCitiesMap(ballon.to2d) }
+    result.size
+  }
+
   def states(solution: Solution, problem: Problem) = {
     val initState = Vector.tabulate(problem.nbBallons)({ i => i -> problem.startPoint }).toMap
     val windMap = problem.winds + (problem.startPoint → WindVector(0, 0))
