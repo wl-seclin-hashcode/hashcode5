@@ -38,7 +38,7 @@ case class Solver(problem: Problem, initialSolution: Option[Solution]) extends L
   case class PartialSolution(positions: Vector[Set[Point]], moves: Vector[Command]) {
     def addBalloon(bestSlot: Slot, bal: Int): PartialSolution = {
       PartialSolution(
-        (positions zip bestSlot.posHistory).map { case (set, p) => set + p },
+        (positions zip bestSlot.posHistory.padTo(nbTurns, startPoint)).map { case (set, p) => set + p },
         moves = moves ++ bestSlot.commands(bal))
     }
   }
@@ -47,17 +47,22 @@ case class Solver(problem: Problem, initialSolution: Option[Solution]) extends L
     val initialSlots = Set(Slot(0, startPoint, None))
     (0 until nbTurns).foldLeft(initialSlots) {
       case (slots, turn) =>
-        val nextSteps = for {
+        val nextSlots = for {
           slot <- slots
           if slot.score >= 0
           dh <- -1 to 1
           nh = slot.pos.height + dh
           if nh <= nbHeights && nh > 0
-          nextPoint <- move(dh, Some(slot.pos))
-          score = Validator.score(sol.positions(turn).toList, nextPoint, problem)
-          nextSlot = Slot(score + slot.score, nextPoint, Some(slot))
-        } yield nextSlot
-        nextSteps.groupBy(_.pos.height).mapValues(_.maxBy(_.score)).values.toSet
+        } yield {
+          move(dh, Some(slot.pos)) match {
+            case Some(nextPoint) =>
+              val score = Validator.score(sol.positions(turn).toList, nextPoint, problem)
+              Slot(score + slot.score, nextPoint, Some(slot))
+            case None =>
+              slot
+          }
+        }
+        nextSlots.groupBy(_.pos.height).mapValues(_.maxBy(_.score)).values.toSet
     }
   }
 
