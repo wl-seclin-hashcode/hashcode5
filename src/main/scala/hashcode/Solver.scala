@@ -12,6 +12,56 @@ case class Solver(problem: Problem, initialSolution: Option[Solution]) extends L
   import problem._
 
   def solve: Solution = {
+    val init = PartialSolution(Vector.fill(nbTurns)(Set.empty), Vector.empty)
+    val sol = (0 until nbBallons).foldLeft(init) {
+      case (sol, bal) =>
+        val lastColumn = bestSolForBal(bal, sol)
+        val bestSlot = lastColumn.maxBy(_.score)
+        val s = sol.addBalloon(bestSlot, bal)
+        println(s"bal $bal : score=${bestSlot.score} sol : $s")
+        s
+    }
+    Solution(sol.moves)
+  }
+
+  case class Slot(score: Int, pos: Point, parent: Option[Slot]) {
+    def commands(bal: Int, round: Int = nbTurns): Vector[Command] = parent match {
+      case None    => Vector.empty
+      case Some(p) => Command(bal, pos.height - p.pos.height, round) +: p.commands(bal, round - 1)
+    }
+
+    def posHistory: Vector[Point] = parent match {
+      case None    => Vector.empty
+      case Some(p) => p.posHistory :+ pos
+    }
+  }
+  case class PartialSolution(positions: Vector[Set[Point]], moves: Vector[Command]) {
+    def addBalloon(bestSlot: Slot, bal: Int): PartialSolution = {
+      PartialSolution(
+        (positions zip bestSlot.posHistory).map { case (set, p) => set + p },
+        moves = moves ++ bestSlot.commands(bal))
+    }
+  }
+
+  def bestSolForBal(bal: Int, sol: PartialSolution): Set[Slot] = {
+    val initialSlots = Set(Slot(0, startPoint, None))
+    (0 until nbTurns).foldLeft(initialSlots) {
+      case (slots, turn) =>
+        val nextSteps = for {
+          slot <- slots
+          if slot.score >= 0
+          dh <- -1 to 1
+          nh = slot.pos.height + dh
+          if nh <= nbHeights && nh > 0
+          nextPoint <- move(dh, Some(slot.pos))
+          score = Validator.score(sol.positions(turn).toList, nextPoint, problem)
+          nextSlot = Slot(score + slot.score, nextPoint, Some(slot))
+        } yield nextSlot
+        nextSteps.groupBy(_.pos.height).mapValues(_.maxBy(_.score)).values.toSet
+    }
+  }
+
+  def solveMichel: Solution = {
     def generate(count: Int) = (Vector.fill(count)(hybridSolution)).maxBy(_.score)
     def combine(generation: Int): Future[Solution] = {
       debug(s"starting generations $generation")

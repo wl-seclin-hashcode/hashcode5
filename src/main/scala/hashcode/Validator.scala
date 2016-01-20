@@ -24,7 +24,7 @@ object Validator {
   }
 
   def score(ballons: List[Point], p:Point, problem: Problem) = {
-    val cities = problem.connectedCitiesMap(p).toSet
+    val cities = problem.connectedCitiesMap(p.to2d).toSet
     val result = ballons.foldLeft(cities) { (cities, ballon) ⇒
       cities -- problem.connectedCitiesMap(ballon.to2d) }
     result.size
