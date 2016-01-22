@@ -12,29 +12,35 @@ case class Solver(problem: Problem, initialSolution: Option[Solution]) extends L
   import problem._
 
   def solve: Solution = {
-    val init = PartialSolution(Vector.fill(nbTurns)(Vector.empty), Vector.empty)
+    val init = PartialSolution(Map.empty)
     val sol = (0 until nbBallons).foldLeft(init) {
       case (sol, bal) =>
         val lastColumn = bestSolForBal(bal, sol)
         val bestSlot = lastColumn.maxBy(_.score)
-        val s = sol.addBalloon(bestSlot, bal, bestSlot.score)
-        println(s"bal $bal : score=${bestSlot.score} sol : $s")
+        val s = sol.addBalloon(bestSlot, bal)
+        println(s"bal $bal : score=${bestSlot.score}")
         s
     }
     //    val sol = Formatter.read(402211)
-    val improved = improve(10, sol)
+    val improved = improve(200, sol)
     Solution(improved.moves)
   }
 
   def improve(count: Int, sol: PartialSolution): PartialSolution =
     if (count == 0) sol
     else {
-      val worseBal = sol.scores.minBy(_._2)._1
-      println(s"improving balloon $worseBal")
+      val worseBal = sol.balloons.toList.sortBy(_._2.score).drop(Random.nextInt(nbBallons/2)).head._1
+      println(s"trying to improve balloon $worseBal")
       val lastColumn = bestSolForBal(worseBal, sol.without(worseBal))
       val bestSlot = lastColumn.maxBy(_.score)
-      val s = sol.addBalloon(bestSlot, worseBal, bestSlot.score)
-      println(s"new score=${bestSlot.score} sol : $s")
+      println(s"new score=${bestSlot.score}")
+      val s =
+        if (bestSlot.score > sol.balloons(worseBal).score)
+          PartialSolution(sol.balloons + (worseBal -> SingleBalloon(bestSlot.posHistory, bestSlot.commands(worseBal), bestSlot.score)))
+        else {
+          println("not better ...")
+          sol
+        }
       val solution = Solution(s.moves)
       Formatter.write(solution, solution.score)
       improve(count - 1, s)
@@ -51,18 +57,23 @@ case class Solver(problem: Problem, initialSolution: Option[Solution]) extends L
       case Some(p) => p.posHistory :+ pos
     }
   }
-  case class PartialSolution(positions: Vector[Vector[Point]], moves: Vector[Command], scores: Map[Int, Int] = Map.empty) {
-    def addBalloon(bestSlot: Slot, bal: Int, score: Int): PartialSolution = {
-      PartialSolution(
-        (positions zip bestSlot.posHistory.padTo(nbTurns, startPoint)).map { case (points, p) => points :+ p },
-        moves = moves ++ bestSlot.commands(bal),
-        scores + (bal -> score))
-    }
 
-    def without(balId: Int) = PartialSolution(
-      positions.map(v => v.take(balId - 1) ++ v.drop(balId)),
-      moves.take(nbTurns * (balId - 1)) ++ moves.drop(nbTurns * balId),
-      scores - balId)
+  case class SingleBalloon(positions: Vector[Point], moves: Vector[Command], score: Int)
+
+  case class PartialSolution(balloons: Map[Int, SingleBalloon]) {
+    def moves: Vector[Command] = balloons.values.flatMap(_.moves).toVector
+
+    def without(bal: Int) = PartialSolution(balloons - bal)
+
+    def positions(turn: Int): Set[Point] = balloons.values.flatMap(b => if (b.positions.size > turn) Some(b.positions(turn)) else None).toSet
+
+    def addBalloon(slot: Slot, bal: Int) =
+      PartialSolution(balloons + (bal -> SingleBalloon(slot.posHistory, slot.commands(bal), slot.score)))
+    //      PartialSolution(
+    //        (positions zip bestSlot.posHistory.padTo(nbTurns, startPoint)).map { case (points, p) => points :+ p },
+    //        moves = moves ++ bestSlot.commands(bal),
+    //        scores + (bal -> score))
+
   }
 
   def bestSolForBal(bal: Int, sol: PartialSolution): Set[Slot] = {
