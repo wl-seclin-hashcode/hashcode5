@@ -29,21 +29,29 @@ case class Solver(problem: Problem, initialSolution: Option[Solution]) extends L
   def improve(count: Int, sol: PartialSolution): PartialSolution =
     if (count == 0) sol
     else {
-      val worseBal = sol.balloons.toList.sortBy(_._2.score).drop(Random.nextInt(nbBallons/2)).head._1
-      println(s"trying to improve balloon $worseBal")
-      val lastColumn = bestSolForBal(worseBal, sol.without(worseBal))
-      val bestSlot = lastColumn.maxBy(_.score)
-      println(s"new score=${bestSlot.score}")
-      val s =
-        if (bestSlot.score > sol.balloons(worseBal).score)
-          PartialSolution(sol.balloons + (worseBal -> SingleBalloon(bestSlot.posHistory, bestSlot.commands(worseBal), bestSlot.score)))
-        else {
-          println("not better ...")
+      val worseBalIds = sol.balloons.toList.sortBy(_._2.score).map(_._1)
+      val improved = worseBalIds.toStream.flatMap {
+        case worseBal =>
+          println(s"trying to improve balloon $worseBal")
+          val lastColumn = bestSolForBal(worseBal, sol.without(worseBal))
+          val bestSlot = lastColumn.maxBy(_.score)
+          println(s"new score=${bestSlot.score}")
+          if (bestSlot.score > sol.balloons(worseBal).score)
+            Some(PartialSolution(sol.balloons + (worseBal -> SingleBalloon(bestSlot.posHistory, bestSlot.commands(worseBal), bestSlot.score))))
+          else {
+            println("not better ...")
+            None
+          }
+      }.headOption
+      improved match {
+        case Some(s) =>
+          val solution = Solution(s.moves)
+          Formatter.write(solution, solution.score)
+          improve(count - 1, s)
+        case None =>
+          println("no improvement found")
           sol
-        }
-      val solution = Solution(s.moves)
-      Formatter.write(solution, solution.score)
-      improve(count - 1, s)
+      }
     }
 
   case class Slot(score: Int, pos: Point, parent: Option[Slot]) {
